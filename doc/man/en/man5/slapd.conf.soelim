@@ -1,5 +1,5 @@
 .\" $ReOpenLDAP$
-.\" Copyright 1992-2017 ReOpenLDAP AUTHORS: please see AUTHORS file.
+.\" Copyright 1992-2018 ReOpenLDAP AUTHORS: please see AUTHORS file.
 .\" All rights reserved.
 .\"
 .\" This file is part of ReOpenLDAP.
@@ -1064,7 +1064,7 @@ an interval defined in seconds allows more smooth out the load
 on the storage subsystem and helps reduce the amount of loss in case of emergency.
 .LP
 2) If \(lqgentle shutdown\(rq is turned on, it will be initiated
-not only by a SIGHUB signal, but by SIGTERM as well. Upon gentle shutdown initiation,
+not only by a SIGHUP signal, but by SIGTERM as well. Upon gentle shutdown initiation,
 5-second connection timeouts are set, unless they have already been set.
 Hence, once gentle shutdown is enabled, it will
 be always initiated, including when stopping the service with standard
@@ -1451,7 +1451,7 @@ When using Mozilla NSS, TLSCertificateKeyFile specifies the name of
 a file that contains the password for the key for the certificate specified with
 TLSCertificateFile.  The modutil command can be used to turn off password
 protection for the cert/key database.  For example, if TLSCACertificatePath
-specifes /etc/reopenldap/certdb as the location of the cert/key database, use
+specifies /etc/reopenldap/certdb as the location of the cert/key database, use
 modutil to change the password to the empty string:
 .nf
 	modutil \-dbdir /etc/reopenldap/certdb \-changepw 'NSS Certificate DB'
@@ -2264,6 +2264,10 @@ is the maximum number of keepalive probes TCP should send before dropping
 the connection;
 .I interval
 is interval in seconds between individual keepalive probes.
+Only some systems support the customization of these values;
+the
+.B keepalive
+parameter is ignored otherwise, and system-wide settings are used.
 
 The
 .B starttls
@@ -2297,6 +2301,12 @@ to the obsolete \fIchangelog\fP format. If the
 .B syncdata
 parameter is omitted or set to "default" then the log parameters are
 ignored.
+
+The
+.B requirecheckpresent
+option enforce resync, in case a data provider
+.BR syncprov
+skips the present phase during a refresh stage.
 .RE
 .TP
 .B updatedn <dn>
@@ -2315,11 +2325,6 @@ Specify the referral to pass back when
 .BR slapd (8)
 is asked to modify a replicated local database.
 If specified multiple times, each url is provided.
-.TP
-.B requirecheckpresent
-Enforce resync, in case a data provider
-.BR syncprov
-skips the present phase during a refresh stage.
 
 .SH DATABASE-SPECIFIC OPTIONS
 Each database may allow specific configuration options; they are
