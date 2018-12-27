@@ -318,7 +318,7 @@ LDAPMODRDN="$TIMEOUT_S $VALGRIND_EX_CMD $CLIENTDIR/ldapmodrdn $TOOLPROTO $TOOLAR
 LDAPWHOAMI="$TIMEOUT_S $VALGRIND_EX_CMD $CLIENTDIR/ldapwhoami $TOOLARGS"
 LDAPCOMPARE="$TIMEOUT_S $VALGRIND_EX_CMD $CLIENTDIR/ldapcompare $TOOLARGS"
 LDAPEXOP="$TIMEOUT_S $VALGRIND_EX_CMD $CLIENTDIR/ldapexop $TOOLARGS"
-SLAPDTESTER="$TIMEOUT_H $PROGDIR/slapd_tester"
+SLAPDTESTER="$TIMEOUT_H $VALGRIND_EX_CMD $PROGDIR/slapd_tester"
 
 function ldif-filter-unwrap {
 	grep -v ^== | $PROGDIR/ldif_filter "$@" | sed -n -e 'H; ${ x; s/\n//; s/\n //g; p}'
@@ -405,6 +405,7 @@ UPDATEDN="cn=Replica,$BASEDN"
 PASSWD=secret
 BABSDN="cn=Barbara Jensen,ou=Information Technology DivisioN,ou=People,$BASEDN"
 BJORNSDN="cn=Bjorn Jensen,ou=Information Technology DivisioN,ou=People,$BASEDN"
+BADBJORNSDN="cn=Bjorn JensenNotReally,ou=Information Technology DivisioN,ou=People,$BASEDN"
 JAJDN="cn=James A Jones 1,ou=Alumni Association,ou=People,$BASEDN"
 JOHNDDN="cn=John Doe,ou=Information Technology Division,ou=People,$BASEDN"
 MELLIOTDN="cn=Mark Elliot,ou=Alumni Association,ou=People,$BASEDN"
@@ -1028,7 +1029,7 @@ EOF
 		fi
 
 		if [ -n "$SKIPLONG" ]; then
-			if echo $TEST_ID | grep -q -e 008 -e 036 -e 039 -e 058 -e 060 -e 8444; then
+			if echo $TEST_ID | grep -q -e 008 -e 036 -e 039 -e 058 -e 060 -e 8444 -e 8752; then
 				((SKIPCOUNT++))
 				echo "***** Skip long ${TB}$BCMD${TN} for $BACKEND_MODE"
 				echo
