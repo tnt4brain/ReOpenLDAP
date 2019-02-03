@@ -260,6 +260,12 @@ contrib_proxyOld_la_LDFLAGS = -module -export-dynamic \
 	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION)
 contrib_proxyOld_la_SOURCES = proxyOld/proxyOld.c banner.c
 
+pkglib_LTLIBRARIES += contrib-python-hook.la
+contrib_python_hook_la_LDFLAGS = -module -export-dynamic \
+	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION)
+contrib_python_hook_la_SOURCES = python/python-hook.c banner.c
+
+
 EXTRA_DIST += samba4/README
 pkglib_LTLIBRARIES += contrib-pguid.la contrib-rdnval.la contrib-vernum.la
 contrib_pguid_la_LDFLAGS = -module -export-dynamic \

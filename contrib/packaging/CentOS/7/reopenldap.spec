@@ -91,13 +91,18 @@ ln -s %{_includedir}/nspr4 include/nspr
 %else
   export CFLAGS="-fpie"
 %endif
-export LDFLAGS="-pie"
+
 # avoid stray dependencies (linker flag --as-needed)
 # enable experimental support for LDAP over UDP (LDAP_CONNECTIONLESS)
-export CFLAGS="${CFLAGS} %{optflags} -Wl,--as-needed -DLDAP_CONNECTIONLESS"
+# export CFLAGS="${CFLAGS} %{optflags} -DLDAP_CONNECTIONLESS"
+
+./bootstrap.sh --dont-cleanup
+export LIBTOOL_SUPPRESS_DEFAULT=no
+export CFLAGS="${CFLAGS} %{optflags} -Ofast %{?_with_tls} -Wl,--as-needed"
+export LDFLAGS="${LDFLAGS} -pie"
 %configure \
    --sysconfdir=%{_sysconfdir}/reopenldap \
-   --enable-deprecated \
+    \
    --enable-syslog \
    --enable-proctitle \
    --enable-ipv6 \
@@ -133,6 +138,7 @@ export CFLAGS="${CFLAGS} %{optflags} -Wl,--as-needed -DLDAP_CONNECTIONLESS"
    --disable-shell \
    --disable-sock \
    --disable-sql \
+   --disable-wt \
    \
    --enable-overlays=mod \
    \
@@ -147,6 +153,7 @@ export CFLAGS="${CFLAGS} %{optflags} -Wl,--as-needed -DLDAP_CONNECTIONLESS"
    --with-tls=moznss \
    \
    --libexecdir=%{_libdir}
+
 make %{?_smp_mflags}
 
 
@@ -352,30 +359,7 @@ exit 0
 %{_unitdir}/slapd.service
 %{_bindir}/mdbx_*
 %{_datadir}/reopenldap-servers/
-%{_libdir}/reopenldap/autoca*.so*
-%{_libdir}/reopenldap/accesslog*.so*
-%{_libdir}/reopenldap/auditlog*.so*
-%{_libdir}/reopenldap/back_ldap*.so*
-%{_libdir}/reopenldap/back_meta*.so*
-%{_libdir}/reopenldap/back_null*.so*
-%{_libdir}/reopenldap/collect*.so*
-%{_libdir}/reopenldap/constraint*.so*
-%{_libdir}/reopenldap/dds*.so*
-%{_libdir}/reopenldap/deref*.so*
-%{_libdir}/reopenldap/dyngroup*.so*
-%{_libdir}/reopenldap/dynlist*.so*
-%{_libdir}/reopenldap/memberof*.so*
-%{_libdir}/reopenldap/pcache*.so*
-%{_libdir}/reopenldap/ppolicy*.so*
-%{_libdir}/reopenldap/refint*.so*
-%{_libdir}/reopenldap/retcode*.so*
-%{_libdir}/reopenldap/rwm*.so*
-%{_libdir}/reopenldap/seqmod*.so*
-%{_libdir}/reopenldap/sssvlv*.so*
-%{_libdir}/reopenldap/syncprov*.so*
-%{_libdir}/reopenldap/translucent*.so*
-%{_libdir}/reopenldap/unique*.so*
-%{_libdir}/reopenldap/valsort*.so*
+%{_libdir}/reopenldap/*.so*
 %dir %{_libexecdir}/reopenldap/
 %{_libexecdir}/reopenldap/functions
 %{_libexecdir}/reopenldap/check-config.sh
@@ -405,3 +389,50 @@ exit 0
 * Fri May 19 2017 Sergey Pechenko <s.pechenko@uiscom.ru> - 1.1.5-641ffb2.1
 - Initial bootstrapping ReOpenLDAP RPM specfile release. Based on contribution by Ivan Viktorov 
 (https://github.com/ReOpen/ReOpenLDAP/issues/33#issuecomment-249861076)
+
+
+#    --disable-debug --enable-syslog --enable-overlays=mod  --enable-dynacl \
+#    --enable-aci --enable-crypt --enable-lmpasswd --enable-spasswd --enable-slapi --enable-rlookups \
+#    --enable-wrappers --enable-backends=mod --disable-bdb --disable-hdb --disable-ndb --disable-wt \
+#    --with-pic \
+#   --with-gnu-ld \
+#   --disable-slp \
+#   --sysconfdir=%{_sysconfdir}/reopenldap \
+#   --libexecdir=%{_libdir} %{?_enable_modules} \
+#   --disable-passwd \
+#   --disable-perl \
+#   --disable-relay \
+#   --disable-shell \
+#   --disable-sock \
+#   --disable-sql \
+#   --disable-static \
+#   --enable-shared \
+#   --enable-mdb=yes \
+#   --enable-dnssrv \
+#   --enable-rewrite \
+#   --enable-slapd \
+#   --with-cyrus-sasl \
+#   --with-gssapi \
+#   --with-tls=moznss \
+#   --disable-aci \
+#
+#
+# --enable-maintainer-mode
+# --enable-hipagut=always
+# --enable-check=always
+# --disable-syslog
+# --enable-slp
+# --disable-modules
+# --enable-overlays
+# disabled SLP
+# enabled syslog
+# changed sysconfdir
+# changed libexecdir
+# disabled debug
+# disabled check
+# disabled hipagut
+# switched overlays to mod
+# moved TLS to conditional
+# disabled CI-related features
+# switched backends to mod
+#
