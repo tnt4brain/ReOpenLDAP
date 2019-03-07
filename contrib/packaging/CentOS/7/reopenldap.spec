@@ -141,6 +141,7 @@ export LDFLAGS="${LDFLAGS} -pie"
    --disable-wt \
    \
    --enable-overlays=mod \
+   --enable-contrib=yes \
    \
    --disable-static \
    --enable-shared \
