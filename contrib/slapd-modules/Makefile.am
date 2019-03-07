@@ -16,6 +16,8 @@
 EXTRA_DIST = README
 pkglib_LTLIBRARIES =
 AM_CPPFLAGS = -DSLAPD_IMPORT -I$(top_srcdir)/servers/slapd -I$(top_srcdir)/include
+PYTHON_CFLGAS = (python3.6m-config --cflags)
+PYTHON_LDFLGAS = (python3.6m-config --ldflags)
 BUILT_SOURCES =
 
 if BEHIND_CURTIAN
@@ -261,8 +263,9 @@ contrib_proxyOld_la_LDFLAGS = -module -export-dynamic \
 contrib_proxyOld_la_SOURCES = proxyOld/proxyOld.c banner.c
 
 pkglib_LTLIBRARIES += contrib-python-hook.la
+contrib_python_hook_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
 contrib_python_hook_la_LDFLAGS = -module -export-dynamic \
-	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION)
+	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION) $(PYTHON_LDFLAGS)
 contrib_python_hook_la_SOURCES = python/python-hook.c banner.c
 
 
