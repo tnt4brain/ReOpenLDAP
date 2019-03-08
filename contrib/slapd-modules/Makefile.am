@@ -16,8 +16,8 @@
 EXTRA_DIST = README
 pkglib_LTLIBRARIES =
 AM_CPPFLAGS = -DSLAPD_IMPORT -I$(top_srcdir)/servers/slapd -I$(top_srcdir)/include
-PYTHON_CFLGAS = (python3.6m-config --cflags)
-PYTHON_LDFLGAS = (python3.6m-config --ldflags)
+PYTHON_CFLAGS = (python3.6m-config --cflags)
+PYTHON_LDFLAGS = (python3.6m-config --ldflags)
 BUILT_SOURCES =
 
 if BEHIND_CURTIAN
