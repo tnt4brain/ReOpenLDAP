@@ -7,6 +7,7 @@
 %global gittag0 %(git describe --abbrev=0 --tags)
 %global ver %(c=%{gittag0}; echo ${c:1})
 %global shortcommit0 %(c=%{commit0}; echo ${c:0:7})
+%define namel %(echo "%{name}" | tr '[:upper:]' '[:lower:]')
 
 Name:		ReOpenLDAP
 Version:	%{ver}
@@ -101,7 +102,7 @@ export LIBTOOL_SUPPRESS_DEFAULT=no
 export CFLAGS="${CFLAGS} %{optflags} -Ofast %{?_with_tls} -Wl,--as-needed"
 export LDFLAGS="${LDFLAGS} -pie"
 %configure \
-   --sysconfdir=%{_sysconfdir}/reopenldap \
+   --sysconfdir=%{_sysconfdir}/%{namel} \
     \
    --enable-syslog \
    --enable-proctitle \
@@ -153,7 +154,9 @@ export LDFLAGS="${LDFLAGS} -pie"
    --with-gnu-ld \
    --with-tls=moznss \
    \
+   --prefix=%{_prefix} \
    --libexecdir=%{_libdir}
+
 
 make %{?_smp_mflags}
 
@@ -163,79 +166,80 @@ mkdir -p %{buildroot}%{_libdir}/
 make install DESTDIR=%{buildroot} STRIP=""
 
 # setup directories for TLS certificates
-mkdir -p %{buildroot}%{_sysconfdir}/reopenldap/certs
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/%{namel}/certs
 
 # setup data and runtime directories
-mkdir -p %{buildroot}%{_sharedstatedir}
-mkdir -p %{buildroot}%{_localstatedir}
-install -m 0700 -d %{buildroot}%{_sharedstatedir}/ldap
-install -m 0755 -d %{buildroot}%{_localstatedir}/run/reopenldap
+%{__mkdir} -p %{buildroot}%{_sharedstatedir}
+%{__mkdir} -p %{buildroot}%{_localstatedir}
+%{__install} -m 0700 -d %{buildroot}%{_sharedstatedir}/ldap
+%{__install} -m 0755 -d %{buildroot}%{_localstatedir}/run/%{namel}
 
 # setup autocreation of runtime directories on tmpfs
-mkdir -p %{buildroot}%{_tmpfilesdir}/
-install -m 0644 %{packaging_dir}/slapd.tmpfiles %{buildroot}%{_tmpfilesdir}/slapd.conf
+%{__mkdir} -p %{buildroot}%{_tmpfilesdir}/
+%{__install} -m 0644 %{packaging_dir}/slapd.tmpfiles %{buildroot}%{_tmpfilesdir}/slapd.conf
 
 # install default ldap.conf (customized)
-rm -f %{buildroot}%{_sysconfdir}/reopenldap/ldap.conf
-install -m 0644 %{packaging_dir}/ldap.conf %{buildroot}%{_sysconfdir}/reopenldap/ldap.conf
+%{__rm} -f %{buildroot}%{_sysconfdir}/%{namel}/ldap.conf
+%{__install} -m 0644 %{packaging_dir}/ldap.conf %{buildroot}%{_sysconfdir}/%{namel}/ldap.conf
 
-# Надо разобраться, что нам нужно из этих самых скриптов и кого из них запускать в %post.
+# Надо разобраться, что нам нужно из этих самых скриптов, и какой из них запускать в %post.
 ## setup maintainance scripts
-mkdir -p %{buildroot}%{_libexecdir}
-install -m 0755 -d %{buildroot}%{_libexecdir}/reopenldap
-install -m 0644 %{packaging_dir}/libexec-functions %{buildroot}%{_libexecdir}/reopenldap/functions
-install -m 0755 %{packaging_dir}/libexec-check-config.sh %{buildroot}%{_libexecdir}/reopenldap/check-config.sh
-install -m 0755 %{packaging_dir}/libexec-upgrade-db.sh %{buildroot}%{_libexecdir}/reopenldap/upgrade-db.sh
+%{__mkdir} -p %{buildroot}%{_libexecdir}
+%{__install} -m 0755 -d %{buildroot}%{_libexecdir}/%{namel}
+%{__install} -m 0644 %{packaging_dir}/libexec-functions %{buildroot}%{_libexecdir}/%{namel}/functions
+%{__install} -m 0755 %{packaging_dir}/libexec-check-config.sh %{buildroot}%{_libexecdir}/%{namel}/check-config.sh
+%{__install} -m 0755 %{packaging_dir}/libexec-upgrade-db.sh %{buildroot}%{_libexecdir}/%{namel}/upgrade-db.sh
 
 # remove build root from config files and manual pages
-perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_sysconfdir}/reopenldap/*.conf
+perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_sysconfdir}/%{namel}/*.conf
 perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_mandir}/*/*.*
 
-# install an init script for the servers
-mkdir -p %{buildroot}%{_unitdir}
-install -m 0644 %{packaging_dir}/slapd.service %{buildroot}%{_unitdir}/slapd.service
+# install a service definition for the servers
+%{__mkdir} -p %{buildroot}%{_unitdir}
+%{__install} -m 0644 %{packaging_dir}/slapd.service %{buildroot}%{_unitdir}/slapd.service
+%{__sed} -i 's#/usr/libexec/#%{_libexecdir}/#g' %{buildroot}%{_unitdir}/slapd.service
 
-# install syconfig/slapd
-mkdir -p %{buildroot}%{_sysconfdir}/sysconfig
-install -m 644 %{packaging_dir}/slapd.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/slapd
+# install sysconfig/slapd
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/sysconfig
+%{__install} -m 644 %{packaging_dir}/slapd.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/slapd
 
 # ldapadd point to buildroot.
-rm -f %{buildroot}%{_bindir}/ldapadd 
+%{__rm} -f %{buildroot}%{_bindir}/ldapadd 
 pushd %{buildroot}%{_bindir}
 ln -s ldapmodify ldapadd
 popd
 
 # tweak permissions on the libraries to make sure they're correct
-chmod 0755 %{buildroot}%{_libdir}/reopenldap/lib*.so*
-chmod 0644 %{buildroot}%{_libdir}/reopenldap/lib*.*a
+chmod 0755 %{buildroot}%{_libdir}/%{namel}/lib*.so*
+chmod 0644 %{buildroot}%{_libdir}/%{namel}/lib*.*a
 
 # slapd.conf(5) is obsoleted since 2.3, see slapd-config(5)
 # new configuration will be generated in %%post
-mkdir -p %{buildroot}%{_datadir}
-install -m 0755 -d %{buildroot}%{_datadir}/reopenldap-servers
-install -m 0644 %{packaging_dir}/slapd.ldif %{buildroot}%{_datadir}/reopenldap-servers/slapd.ldif
-install -m 0644 %{packaging_dir}/DB_CONFIG.example %{buildroot}%{_datadir}/reopenldap-servers/DB_CONFIG.example
-install -m 0700 -d %{buildroot}%{_sysconfdir}/reopenldap/slapd.d
-rm -f %{buildroot}%{_sysconfdir}/reopenldap/slapd.conf
-rm -f %{buildroot}%{_sysconfdir}/reopenldap/slapd.ldif
+%{__mkdir} -p %{buildroot}%{_datadir}
+%{__install} -m 0755 -d %{buildroot}%{_datadir}/%{namel}-servers
+%{__install} -m 0644 %{packaging_dir}/slapd.ldif %{buildroot}%{_datadir}/%{namel}-servers/slapd.ldif
+%{__install} -m 0644 %{packaging_dir}/DB_CONFIG.example %{buildroot}%{_datadir}/%{namel}-servers/DB_CONFIG.example
+%{__install} -m 0700 -d %{buildroot}%{_sysconfdir}/%{namel}/slapd.d
+%{__rm} -f %{buildroot}%{_sysconfdir}/%{namel}/slapd.conf
+%{__rm} -f %{buildroot}%{_sysconfdir}/%{namel}/slapd.ldif
 
 # move doc files out of _sysconfdir
-mv %{buildroot}%{_sysconfdir}/reopenldap/schema/README README.schema
-#mv %{buildroot}%{_sysconfdir}/schema %{buildroot}%{_sysconfdir}/reopenldap
+mv %{buildroot}%{_sysconfdir}/%{namel}/schema/README README.schema
+#mv %{buildroot}%{_sysconfdir}/schema %{buildroot}%{_sysconfdir}/%{namel}
 
 # remove files which we don't want packaged
-rm -f %{buildroot}%{_libdir}/reopenldap/*.la
-rm -f %{buildroot}%{_mandir}/man5/ldif.5*
-rm -f %{buildroot}%{_mandir}/man5/ldap.conf.5*
+%{__rm} -f %{buildroot}%{_libdir}/%{namel}/*.la
+%{__rm} -f %{buildroot}%{_mandir}/man5/ldif.5*
+%{__rm} -f %{buildroot}%{_mandir}/man5/ldap.conf.5*
 
-# Disabled due to request: https://github.com/leo-yuriev/ReOpenLDAP/pull/145#issuecomment-358626660
+# Now these are being removed due to request: https://github.com/leo-yuriev/ReOpenLDAP/pull/145#issuecomment-358626660
 # devel
-rm -f %{buildroot}%{_includedir}/reopenldap/*
-rm -f %{buildroot}%{_mandir}/man3/*
+%{__rm} -f %{buildroot}%{_includedir}/%{namel}/*
+%{__rm} -f %{buildroot}%{_mandir}/man3/*
 
 
 %clean
-rm -rf %{buildroot}
+%{__rm} -rf %{buildroot}
 
 %post
 /sbin/ldconfig
@@ -249,7 +253,7 @@ getent passwd ldap &>/dev/null || \
    useradd -r -g ldap -u 55 -d %{_sharedstatedir}/ldap -s /sbin/nologin -c "OpenLDAP server" ldap
 if [ $1 -eq 2 ]; then
    # package upgrade
-   old_version=$(rpm -q --qf=%%{version} reopenldap-servers)
+   old_version=$(rpm -q --qf=%%{version} %{namel}-servers)
    new_version=%{version}
    if [ "$old_version" != "$new_version" ]; then
        touch %{_sharedstatedir}/ldap/rpm_upgrade_reopenldap &>/dev/null
@@ -259,17 +263,17 @@ exit 0
 
 %post servers
 
-/sbin/ldconfig -n %{_libdir}/reopenldap
+/sbin/ldconfig -n %{_libdir}/%{namel}
 %systemd_post slapd.service
 
 # generate configuration if necessary
-if [[ ! -f %{_sysconfdir}/reopenldap/slapd.d/cn=config.ldif && \
-      ! -f %{_sysconfdir}/reopenldap/slapd.conf
+if [[ ! -f %{_sysconfdir}/%{namel}/slapd.d/cn=config.ldif && \
+      ! -f %{_sysconfdir}/%{namel}/slapd.conf
    ]]; then
       # if there is no configuration available, generate one from the defaults
-      mkdir -p %{_sysconfdir}/reopenldap/slapd.d/ &>/dev/null || :
-      /usr/sbin/slapadd -F %{_sysconfdir}/reopenldap/slapd.d/ -n0 -l %{_datadir}/reopenldap-servers/slapd.ldif
-      chown -R ldap:ldap %{_sysconfdir}/reopenldap/slapd.d/
+      %{__mkdir} -p %{_sysconfdir}/%{namel}/slapd.d/ &>/dev/null || :
+      /usr/sbin/slapadd -F %{_sysconfdir}/%{namel}/slapd.d/ -n0 -l %{_datadir}/%{namel}-servers/slapd.ldif
+      %{__chown} -R ldap:ldap %{_sysconfdir}/%{namel}/slapd.d/
       %{systemctl_bin} try-restart slapd.service &>/dev/null
 fi
 start_slapd=0
@@ -281,8 +285,8 @@ if [ -f %{_sharedstatedir}/ldap/rpm_upgrade_reopenldap ]; then
        start_slapd=1
    fi
 
-   %{_libexecdir}/reopenldap/upgrade-db.sh &>/dev/null
-   rm -f %{_sharedstatedir}/ldap/rpm_upgrade_reopenldap
+   %{_libexecdir}/%{namel}/upgrade-db.sh &>/dev/null
+   %{__rm} -f %{_sharedstatedir}/ldap/rpm_upgrade_reopenldap
 fi
 
 # restart after upgrade
@@ -310,7 +314,7 @@ if [ $2 -eq 2 ]; then
    if [ "$(rpm -q --qf="%%{version}\n" libdb | sed 's/\.[0-9]*$//' | sort -u | wc -l)" != "1" ]; then
        touch %{_sharedstatedir}/ldap/rpm_upgrade_libdb
    else
-       rm -f %{_sharedstatedir}/ldap/rpm_upgrade_libdb
+       %{__rm} -f %{_sharedstatedir}/ldap/rpm_upgrade_libdb
    fi
 fi
 exit 0
@@ -324,8 +328,8 @@ if [ -f %{_sharedstatedir}/ldap/rpm_upgrade_libdb ]; then
    else
        start=0
    fi
-   %{_libexecdir}/reopenldap/upgrade-db.sh &>/dev/null
-   rm -f %{_sharedstatedir}/ldap/rpm_upgrade_libdb
+   %{_libexecdir}/%{namel}/upgrade-db.sh &>/dev/null
+   %{__rm} -f %{_sharedstatedir}/ldap/rpm_upgrade_libdb
    [ $start -eq 1 ] && %{systemctl_bin} start slapd.service &>/dev/null
 fi
 exit 0
@@ -340,49 +344,50 @@ exit 0
 %doc README
 %doc README.md
 %doc README.OpenLDAP
-%dir %{_sysconfdir}/reopenldap
-%dir %{_sysconfdir}/reopenldap/certs
-%config(noreplace) %{_sysconfdir}/reopenldap/ldap.conf
-%{_libdir}/reopenldap/libreldap*.so*
-%{_libdir}/reopenldap/libreslapi*.so*
+%dir %{_sysconfdir}/%{namel}
+%dir %{_sysconfdir}/%{namel}/certs
+%config(noreplace) %{_sysconfdir}/%{namel}/ldap.conf
+%{_libdir}/%{namel}/libreldap*.so*
+%{_libdir}/%{namel}/libreslapi*.so*
 #%{_mandir}/man5/ldif.5*
 #%{_mandir}/man5/ldap.conf.5*
 
 %files servers
 %doc contrib/slapd-modules/smbk5pwd/README
 %doc README.schema
-%config(noreplace) %dir %attr(0750,ldap,ldap) %{_sysconfdir}/reopenldap/slapd.d
-%config(noreplace) %{_sysconfdir}/reopenldap/schema
+%config(noreplace) %dir %attr(0750,ldap,ldap) %{_sysconfdir}/%{namel}/slapd.d
+%config(noreplace) %{_sysconfdir}/%{namel}/schema
 %config(noreplace) %{_sysconfdir}/sysconfig/slapd
 %config(noreplace) %{_tmpfilesdir}/slapd.conf
+%config(noreplace) %{_sysconfdir}/%{namel}/check_password.conf
 %dir %attr(0700,ldap,ldap) %{_sharedstatedir}/ldap
-%dir %attr(-,ldap,ldap) %{_localstatedir}/run/reopenldap
+%dir %attr(-,ldap,ldap) %{_localstatedir}/run/%{namel}
 %{_unitdir}/slapd.service
 %{_bindir}/mdbx_*
-%{_datadir}/reopenldap-servers/
-%{_libdir}/reopenldap/*.so*
-%dir %{_libexecdir}/reopenldap/
-%{_libexecdir}/reopenldap/functions
-%{_libexecdir}/reopenldap/check-config.sh
-%{_libexecdir}/reopenldap/upgrade-db.sh
+%{_datadir}/%{namel}-servers/
+%{_libdir}/%{namel}/*.so*
+%dir %{_libexecdir}/%{namel}/
+%{_libexecdir}/%{namel}/functions
+%{_libexecdir}/%{namel}/check-config.sh
+%{_libexecdir}/%{namel}/upgrade-db.sh
 %{_sbindir}/slap*
 %{_mandir}/man5/slap*
 %{_mandir}/man8/*
 %{_mandir}/ru/man5/*
 %{_mandir}/ru/man8/*
 # obsolete configuration
-%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/reopenldap/slapd.conf
-%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/reopenldap/slapd.conf.bak
+%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/%{namel}/slapd.conf
+%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/%{namel}/slapd.conf.bak
 
 %files clients
 %{_bindir}/ldap*
 %{_mandir}/man1/*
 %{_mandir}/ru/man1/*
-%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/reopenldap/slapd.conf
+%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/%{namel}/slapd.conf
 
 # https://github.com/leo-yuriev/ReOpenLDAP/pull/145#issuecomment-358626660
 #%files devel
-#%{_includedir}/reopenldap/*
+#%{_includedir}/%{namel}/*
 #%{_mandir}/man3/*
 
 
@@ -398,7 +403,7 @@ exit 0
 #    --with-pic \
 #   --with-gnu-ld \
 #   --disable-slp \
-#   --sysconfdir=%{_sysconfdir}/reopenldap \
+#   --sysconfdir=%{_sysconfdir}/%{namel} \
 #   --libexecdir=%{_libdir} %{?_enable_modules} \
 #   --disable-passwd \
 #   --disable-perl \

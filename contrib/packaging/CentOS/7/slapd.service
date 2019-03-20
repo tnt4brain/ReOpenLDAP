@@ -10,9 +10,15 @@ Documentation=man:slapd-mdb
 Type=forking
 PIDFile=/var/run/reopenldap/slapd.pid
 Environment="SLAPD_URLS=ldap:/// ldapi://%2Fvar%2Frun%2Fldapi" "SLAPD_OPTIONS="
+Environment="SLAPD_INSTANCE_NAME=reopenldap"
+Environment="SLAPD_CHECK_PATH=/usr/libexec/${SLAPD_INSTANCE_NAME}"
+Environment="SLAPD_PATH=/usr/sbin"
 EnvironmentFile=/etc/sysconfig/slapd
-ExecStartPre=/usr/libexec/reopenldap/check-config.sh
-ExecStart=/usr/sbin/slapd -u ldap -h ${SLAPD_URLS} $SLAPD_OPTIONS
+RuntimeDirectory=${SLAPD_INSTANCE_NAME}
+LogDirectory=${SLAPD_INSTANCE_NAME}
+StateDirectory=${SLAPD_INSTANCE_NAME}
+ExecStartPre=${SLAPD_CHECK_PATH}/check-config.sh
+ExecStart=${SLAPD_PATH}/slapd -u ldap -h ${SLAPD_URLS} $SLAPD_OPTIONS
 
 [Install]
 WantedBy=multi-user.target
