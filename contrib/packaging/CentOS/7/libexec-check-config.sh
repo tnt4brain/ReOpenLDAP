@@ -1,7 +1,8 @@
 #!/bin/sh
 # Author: Jan Vcelak <jvcelak@redhat.com>
+# Modified to support non-root-based installations by Sergey Pechenko <10977752+tnt4brain@users.noreply.github.com>
 
-. /usr/libexec/reopenldap/functions
+. `dirname $0`/functions
 
 function check_config_syntax()
 {

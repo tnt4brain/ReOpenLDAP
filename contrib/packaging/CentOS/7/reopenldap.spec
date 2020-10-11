@@ -91,10 +91,13 @@ ln -s %{_includedir}/nspr4 include/nspr
 %else
   export CFLAGS="-fpie"
 %endif
-export LDFLAGS="-pie"
+export LDFLAGS="${LDFLAGS} -pie"
 # avoid stray dependencies (linker flag --as-needed)
 # enable experimental support for LDAP over UDP (LDAP_CONNECTIONLESS)
-export CFLAGS="${CFLAGS} %{optflags} -Wl,--as-needed -DLDAP_CONNECTIONLESS"
+export CFLAGS="${CFLAGS} -Ofast %{?_with_tls} -Wl,--as-needed"
+export CFLAGS="${CFLAGS} %{optflags} -Wl,--as-needed -DLDAP_CONNECTIONLESS -Werror"
+./bootstrap.sh --dont-cleanup
+export LIBTOOL_SUPPRESS_DEFAULT=no
 %configure \
    --sysconfdir=%{_sysconfdir}/reopenldap \
    --enable-deprecated \
@@ -402,6 +405,14 @@ exit 0
 
 
 %changelog
+* Thu Aug 23 2018 Sergey Pechenko 
+- 'devel' package build removed completely
+- Package name has been changed to 'reopenldap' as per request by Leo Yuriev
+
+* Wed Aug 22 2018 Sergey Pechenko - 1.1.5-bae39f7.1
+- Minor fix so no configuration file conflict happens
+
 * Fri May 19 2017 Sergey Pechenko <s.pechenko@uiscom.ru> - 1.1.5-641ffb2.1
 - Initial bootstrapping ReOpenLDAP RPM specfile release. Based on contribution by Ivan Viktorov 
 (https://github.com/ReOpen/ReOpenLDAP/issues/33#issuecomment-249861076)
+
