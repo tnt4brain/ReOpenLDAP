@@ -44,7 +44,7 @@ int i;
 
 
 static int python_hook_initialize() {
-  //char *hook_file_path = NULL;
+  char *hook_file_path = NULL;
   memset(&python_hook, 0, sizeof(python_hook));
 
   // simple string
@@ -76,58 +76,58 @@ static int python_hook_initialize() {
   Py_Initialize();
 
   // Get modules dir
-  //hook_file_path = LDAP_MALLOC(strlen(HOOK_FILE_PATH) + sizeof(LDAP_DIRSEP));
-  //sprintf(hook_file_path, "%s" LDAP_DIRSEP, HOOK_FILE_PATH);
+  hook_file_path = LDAP_MALLOC(strlen(HOOK_FILE_PATH) + sizeof(LDAP_DIRSEP));
+  sprintf(hook_file_path, "%s" LDAP_DIRSEP, HOOK_FILE_PATH);
 
   // Prepare search path modification statement
-  //hook_file_import = LDAP_MALLOC(strlen(hook_file_path) + sizeof(LDAP_DIRSEP) + strlen(HOOK_FILE_IMPORT));
-  //sprintf(hook_file_import, HOOK_FILE_IMPORT, HOOK_FILE_PATH);
+  hook_file_import = LDAP_MALLOC(strlen(hook_file_path) + sizeof(LDAP_DIRSEP) + strlen(HOOK_FILE_IMPORT));
+  sprintf(hook_file_import, HOOK_FILE_IMPORT, HOOK_FILE_PATH);
 
   // Extend search path
-  //PyRun_SimpleString(hook_file_import);
+  PyRun_SimpleString(hook_file_import);
 
   // Clean up
-  //if (hook_file_path != NULL) {
-//    LDAP_FREE(hook_file_path);
-  //}
-  //if (hook_file_import != NULL) {
-//    LDAP_FREE(hook_file_import);
-  //}
+  if (hook_file_path != NULL) {
+    LDAP_FREE(hook_file_path);
+  }
+  if (hook_file_import != NULL) {
+    LDAP_FREE(hook_file_import);
+  }
 
   // get hook filename
-  //pName = PyUnicode_DecodeFSDefault(HOOK_FILE_NAME);
+  pName = PyUnicode_DecodeFSDefault(HOOK_FILE_NAME);
 
   // import it
-  //pModule = PyImport_Import(pName);
+  pModule = PyImport_Import(pName);
 
   // Dispose of filename
-  //Py_XDECREF(pName);
+  Py_XDECREF(pName);
 
   // if we have managed to import module....
-  //if (pModule != NULL) {
+  if (pModule != NULL) {
     // then try to find its entry function
-    //pEntryFunc = PyObject_GetAttrString(pModule, init_hook);
+    pEntryFunc = PyObject_GetAttrString(pModule, init_hook);
     // if that function could be called...
-    //if (pEntryFunc && PyCallable_Check(pEntryFunc)) {
+    if (pEntryFunc && PyCallable_Check(pEntryFunc)) {
 	// Log here: "Python hook: calling init"
-        //pValue = PyObject_CallObject(pEntryFunc, NULL);
-        //if (pValue != NULL) {
-	//    Debug(LDAP_DEBUG_TRACE, "python_hook_initialize: result is not NULL");
-	//    }
-        //Py_XDECREF(pValue);
-        //Py_XDECREF(pEntryFunc);
-	//}
-    //Py_XDECREF(pModule);
-    //}
-    //else {
-//	PyErr_Print();
-//        fprintf(stderr, "Failed to load \"%s\"\n", hook_file);
-//        return -1;
-//	}
-//    if (Py_FinalizeEx() < 0) {
-//        return -1;
-//	}
-//    Log(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "Python hook initialized\n");
+        pValue = PyObject_CallObject(pEntryFunc, NULL);
+        if (pValue != NULL) {
+	    Debug(LDAP_DEBUG_TRACE, "python_hook_initialize: result is not NULL");
+	    }
+        Py_XDECREF(pValue);
+        Py_XDECREF(pEntryFunc);
+	}
+    Py_XDECREF(pModule);
+    }
+    else {
+	PyErr_Print();
+        fprintf(stderr, "Failed to load \"%s\"\n", hook_file);
+        return -1;
+	}
+    if (Py_FinalizeEx() < 0) {
+        return -1;
+	}
+    Log(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "Python hook initialized\n");
     return overlay_register(&python_hook);
 }
 // python_hook_initialize
