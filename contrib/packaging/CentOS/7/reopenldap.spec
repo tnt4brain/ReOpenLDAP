@@ -23,7 +23,7 @@ BuildRequires:	cyrus-sasl-devel, krb5-devel, tcp_wrappers-devel, unixODBC-devel 
 BuildRequires:	glibc-devel, libtool, libtool-ltdl-devel, groff, perl, perl-devel, perl(ExtUtils::Embed)
 BuildRequires:	openssl-devel, nss-devel
 BuildRequires:	bc git
-Requires:	rpm, coreutils, nss-tools
+Requires:	rpm, coreutils, nss-tools, libdb-utils
 
 %description
 The fork of OpenLDAP with a few new features (mostly for highload and multi-master clustering), additional bug fixing and code quality improvement.
@@ -182,7 +182,6 @@ make install DESTDIR=%{buildroot} STRIP=""
 %{__rm} -f %{buildroot}%{_sysconfdir}/%{namel}/ldap.conf
 %{__install} -m 0644 %{packaging_dir}/ldap.conf %{buildroot}%{_sysconfdir}/%{namel}/ldap.conf
 
-# Надо разобраться, что нам нужно из этих самых скриптов, и какой из них запускать в %post.
 ## setup maintainance scripts
 %{__mkdir} -p %{buildroot}%{_libexecdir}
 %{__install} -m 0755 -d %{buildroot}%{_libexecdir}/%{namel}
