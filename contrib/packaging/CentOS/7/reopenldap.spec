@@ -202,8 +202,12 @@ perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_mandir}/*/*.*
 %{__mkdir} -p %{buildroot}%{_sysconfdir}/sysconfig
 %{__install} -m 644 %{packaging_dir}/slapd.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/slapd
 
-# ldapadd point to buildroot.
-%{__rm} -f %{buildroot}%{_bindir}/ldapadd 
+# install logging config
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/rsyslog.d
+%{__install} -m 644 %{packaging_dir}/slapd.rsyslog.conf %{buildroot}%{_sysconfdir}/rsyslog.d/slapd.conf
+
+# ldapadd point to buildroot
+%{__rm} -f %{buildroot}%{_bindir}/ldapadd
 pushd %{buildroot}%{_bindir}
 ln -s ldapmodify ldapadd
 popd
@@ -359,6 +363,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/sysconfig/slapd
 %config(noreplace) %{_tmpfilesdir}/slapd.conf
 %config(noreplace) %{_sysconfdir}/%{namel}/check_password.conf
+%config(noreplace) %{_sysconfdir}/rsyslog.d/slapd.conf
 %dir %attr(0700,ldap,ldap) %{_sharedstatedir}/ldap
 %dir %attr(-,ldap,ldap) %{_localstatedir}/run/%{namel}
 %{_unitdir}/slapd.service
