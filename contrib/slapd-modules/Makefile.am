@@ -262,11 +262,11 @@ contrib_proxyOld_la_LDFLAGS = -module -export-dynamic \
 	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION)
 contrib_proxyOld_la_SOURCES = proxyOld/proxyOld.c banner.c
 
-pkglib_LTLIBRARIES += contrib-pyth.la
-contrib_pyth_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
-contrib_pyth_la_LDFLAGS = -module -export-dynamic \
+pkglib_LTLIBRARIES += contrib-python.la
+contrib_python_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
+contrib_python_la_LDFLAGS = -module -export-dynamic \
 	-release $(API_LIB_RELEASE) -version-info $(API_LIB_VERSION) $(PYTHON_LDFLAGS)
-contrib_pyth_la_SOURCES = pyth/pyth.c banner.c
+contrib_python_la_SOURCES = python/python.c banner.c
 
 
 EXTRA_DIST += samba4/README
